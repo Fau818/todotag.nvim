@@ -100,10 +100,13 @@ local function has_todo_bg_extmark(bufnr, line, scol, ecol)
   for _, extmark in ipairs(extmarks) do
     local _, _, mark_col, details = unpack(extmark)
     ---@cast details vim.api.keyset.extmark_details
-    if not details.end_col then vim.notify("ERROR: Missing end_col in extmark details", vim.log.levels.ERROR) end
-    -- Check if extmark overlaps with the region
-    if not (ecol <= mark_col or scol >= details.end_col) then
-      if details.hl_group and details.hl_group:match("^TodoBg") then return true end
+    if not details.end_col then
+      vim.notify("ERROR: Missing end_col in extmark details", vim.log.levels.ERROR)
+    else
+      -- Check if extmark overlaps with the region
+      if not (ecol <= mark_col or scol >= details.end_col) then
+        if details.hl_group and details.hl_group:match("^TodoBg") then return true end
+      end
     end
   end
 
@@ -172,23 +175,30 @@ function M._update()
     if not vim.api.nvim_buf_is_valid(buf) then M.state[buf] = nil
     else
       local todo = {}  ---@type table<number, boolean>
-      local wins = vim.fn.win_findbuf(buf)
-      for _, win in ipairs(wins) do
-        local srow = vim.fn.line("w0", win)
-        local erow = vim.fn.line("w$", win)
-        for i = srow, erow do if not state.valid[i] then todo[i] = true end end
+      if Config.config.only_visible then
+        -- Only update visible regions
+        local wins = vim.fn.win_findbuf(buf)
+        for _, win in ipairs(wins) do
+          local srow = vim.fn.line("w0", win)
+          local erow = vim.fn.line("w$", win)
+          for i = srow, erow do if not state.valid[i] then todo[i] = true end end
+        end
+      else
+        -- Update entire buffer
+        local lines = vim.api.nvim_buf_line_count(buf)
+        for i = 1, lines do if not state.valid[i] then todo[i] = true end end
+      end
 
-        local dirty = vim.tbl_keys(todo)
-        table.sort(dirty)
-        if #dirty > 0 then
-          local i = 1
-          while i <= #dirty do
-            local top, bottom = dirty[i], dirty[i]
-            while i + 1 <= #dirty and dirty[i + 1] == dirty[i] + 1 do i = i + 1 bottom = dirty[i] end
-            M.highlight(buf, top, bottom)
-            for j = top, bottom do state.valid[j] = true end
-            i = i + 1
-          end
+      local dirty = vim.tbl_keys(todo)
+      table.sort(dirty)
+      if #dirty > 0 then
+        local i = 1
+        while i <= #dirty do
+          local top, bottom = dirty[i], dirty[i]
+          while i + 1 <= #dirty and dirty[i + 1] == dirty[i] + 1 do i = i + 1 bottom = dirty[i] end
+          M.highlight(buf, top, bottom)
+          for j = top, bottom do state.valid[j] = true end
+          i = i + 1
         end
       end
     end
@@ -235,7 +245,7 @@ function M.attach(win)
   if not M.bufs[buf] then
     vim.api.nvim_buf_attach(buf, false, {
       on_reload = function()
-        if not M.enabled or not M.is_valid_buf(buf) then return end
+        if not M.enabled or not is_valid_buf(buf) then return end
         M.invalidate(buf, 0, -1)
       end,
       on_lines = function(_event, _buf, _tick, first, _last, last_new)

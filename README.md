@@ -26,30 +26,12 @@ A lightweight and customizable Neovim plugin that highlights todo tags in commen
 ```lua
 {
   "fau818/todotag.nvim",
-  dependencies = { "folke/todo-comments.nvim" },  -- Optional dependency
+  dependencies = "folke/todo-comments.nvim",  -- Optional: enhances TODO management
   opts = {},
 }
 ```
 
-### Using packer.nvim
-
-```lua
-use {
-  "fau818/todotag.nvim",
-  config = function()
-    require("todotag").setup()
-  end
-}
-```
-
-### Using vim-plug
-
-```vimscript
-Plug 'fau818/todotag.nvim'
-
-" In your init.vim or after/plugin/todotag.vim
-lua require("todotag").setup()
-```
+For a more complete lazy.nvim configuration with custom highlights, see the [Comprehensive Configuration](#comprehensive-configuration) section.
 
 ## Usage
 
@@ -75,8 +57,8 @@ require("todotag").setup({
   -- Keywords recognized as todo tags
   keywords = {
     todo = { hl_group = "Todo", case_sensitive = false },
-    fix = { hl_group = "Error", case_sensitive = true },
-    note = { hl_group = "WarningMsg", case_sensitive = false },
+    fix  = { hl_group = "Error", case_sensitive = true },
+    note = { hl_group = "DiagnosticInfo", case_sensitive = false },
   },
 
   -- Highlight priority (default: 501, covers todo-comments.nvim)
@@ -161,17 +143,36 @@ require("todotag").setup({
 
 ### Comprehensive Configuration
 
+Here's a focused example using lazy.nvim:
+
 ```lua
--- Configure multiple keywords with different highlight groups
-require("todotag").setup({
-  keywords = {
-    todo = { hl_group = "Todo", case_sensitive = false },
-    note = { hl_group = "WarningMsg", case_sensitive = false },
-    fixme = { hl_group = "Error", case_sensitive = true },  -- Case-sensitive
+-- In your lazy.nvim plugin configuration
+return {
+  "fau818/todotag.nvim",
+  dependencies = "folke/todo-comments.nvim",  -- Optional dependency
+
+  opts = {
+    keywords = {
+      -- Primary TODO tag (green)
+      todo = { hl_group = "TodoTag", case_sensitive = false },
+      -- Information tag (blue)
+      note = { hl_group = "InfoTag", case_sensitive = false },
+      -- Fix tag (red)
+      fix  = { hl_group = "FixTag", case_sensitive = false },
+    },
+    only_visible = true,  -- Highlight only visible lines (performance)
+    throttle = 250,       -- Throttle updates
   },
-  throttle = 500,  -- Reduce update frequency
-  only_visible = false,  -- Highlight all lines in buffer
-})
+
+  config = function(_, opts)
+    -- Define custom highlight groups with literal colors
+    vim.api.nvim_set_hl(0, "TodoTag", { fg = "#39CC8F", bold = true, italic = true })
+    vim.api.nvim_set_hl(0, "InfoTag", { fg = "#7AA2F7", bold = true, italic = true })
+    vim.api.nvim_set_hl(0, "FixTag",  { fg = "#C53B53", bold = true, italic = true })
+
+    require("todotag").setup(opts)
+  end,
+}
 ```
 
 ## Troubleshooting
