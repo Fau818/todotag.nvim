@@ -1,8 +1,8 @@
-# todotag.nvim
+# ✅ todotag.nvim
 
 A lightweight and customizable Neovim plugin that highlights todo tags in comments.
 
-## Features
+## ✨ Features
 
 - **Customizable Todo Tags**: Define your own todo keywords and highlight groups
 - **Smart Highlighting**: Only highlights tags in comment regions
@@ -11,7 +11,7 @@ A lightweight and customizable Neovim plugin that highlights todo tags in commen
 - **Exclusion Rules**: Exclude specific filetypes and buftypes
 - **Priority Control**: Set highlight priority to override other plugins
 
-## Demo
+## 🎨 Demo
 
 ### Basic Showcase
 ![Basic Showcase](assets/showcase.png)
@@ -19,7 +19,7 @@ A lightweight and customizable Neovim plugin that highlights todo tags in commen
 ### With todo-comments.nvim Integration
 ![With todo-comments.nvim](assets/showcase_with_todocomments.png)
 
-## Installation
+## 📦 Installation
 
 ### Using lazy.nvim
 
@@ -33,7 +33,7 @@ A lightweight and customizable Neovim plugin that highlights todo tags in commen
 
 For a more complete lazy.nvim configuration with custom highlights, see the [Comprehensive Configuration](#comprehensive-configuration) section.
 
-## Usage
+## 🚀 Usage
 
 ### Start/Stop Highlighting
 
@@ -48,7 +48,7 @@ The plugin starts automatically when Neovim launches, but you can control it wit
 
 By default, the plugin highlights the keyword `TODO` in comments with the `Todo` highlight group.
 
-## Configuration
+## ⚙️ Configuration
 
 You can customize the plugin's behavior by passing a configuration table to `setup()`:
 
@@ -106,7 +106,7 @@ require("todotag").setup({
 })
 ```
 
-## Key Features Explained
+## 🔍 Key Features Explained
 
 ### Case Sensitivity
 
@@ -128,7 +128,7 @@ The plugin detects if a tag is inside a comment using two methods:
 - **Buffer Attach**: Attaches only to valid buffers (excludes floats, help, etc.)
 - **State Management**: Tracks valid lines to avoid unnecessary re-highlighting
 
-## Examples
+## 📖 Examples
 
 ### Basic Custom Configuration
 
@@ -175,7 +175,7 @@ return {
 }
 ```
 
-## Troubleshooting
+## ❗️ Troubleshooting
 
 ### Tags Are Not Highlighted
 
@@ -190,19 +190,19 @@ return {
 - Set `only_visible` to `true` to only highlight visible lines
 - Reduce the number of keywords if you have many custom tags
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit issues and pull requests.
 
-## License
+## 📄 License
 
 MIT License - see LICENSE file for details
 
-## Support
+## 💬 Support
 
 If you have any questions or issues, please open an issue on the GitHub repository: [issues](https://github.com/fau818/todotag.nvim/issues)
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - Inspired by various todo highlighting plugins
 - Uses ideas from [folke/todo-comments.nvim](https://github.com/folke/todo-comments.nvim)
