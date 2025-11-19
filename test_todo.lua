@@ -14,8 +14,8 @@
 -- Ps: 123
 
 -- Test with different cases
--- Todo: This should NOT be highlighted
--- toDo: This should NOT be highlighted
+-- Todo: This should be highlighted
+-- toDo: This should be highlighted
 -- TODOX: This should NOT be highlighted (extra character)
 
 -- Test with dashes (since pattern includes - as word boundary)

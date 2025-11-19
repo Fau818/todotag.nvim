@@ -11,6 +11,14 @@ A lightweight and customizable Neovim plugin that highlights todo tags in commen
 - **Exclusion Rules**: Exclude specific filetypes and buftypes
 - **Priority Control**: Set highlight priority to override other plugins
 
+## Demo
+
+### Basic Showcase
+![Basic Showcase](assets/showcase.png)
+
+### With todo-comments.nvim Integration
+![With todo-comments.nvim](assets/showcase_with_todocomments.png)
+
 ## Installation
 
 ### Using lazy.nvim
