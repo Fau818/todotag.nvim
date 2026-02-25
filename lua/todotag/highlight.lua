@@ -36,20 +36,58 @@ end
 -- ==================== Pattern ====================
 local _patterns = nil  ---@type Todotag.Patterns
 
+---Build a search pattern with frontier assertions at word-character edges.
+---Frontiers are only applied where the edge character is a word char (%w, _, -).
+---@param escaped string The vim.pesc-escaped pattern string.
+---@param raw string The original (unescaped) pattern string.
+---@return string
+local function build_pattern_with_frontiers(escaped, raw)
+  local first_char = raw:sub(1, 1)
+  local last_char = raw:sub(-1)
+  local leading = first_char:match("[%w_%-]") and "%f[%w_-]" or ""
+  local trailing = last_char:match("[%w_%-]") and "%f[^%w_-]" or ""
+  return leading .. escaped .. trailing
+end
+
+
 ---Get the todo-tag patterns based on the configuration.
 ---@return Todotag.Patterns[]
 local function get_patterns()
   if _patterns == nil then
     _patterns = {}
-    for kw, opts in pairs(Config.config.keywords) do
-      local escaped_kw = vim.pesc(kw)
+    for _, opts in ipairs(Config.config.keywords) do
+      local raw_pattern = opts.pattern
+      local escaped_pattern = vim.pesc(raw_pattern)
       -- For case-insensitive matching, use lowercase pattern.
-      local keyword_pattern = opts.case_sensitive and escaped_kw or escaped_kw:lower()
+      if not opts.case_sensitive then
+        raw_pattern = raw_pattern:lower()
+        escaped_pattern = escaped_pattern:lower()
+      end
+
+      local search_pattern = build_pattern_with_frontiers(escaped_pattern, raw_pattern)
+
+      -- Compute highlight offset/length when hl_part is specified
+      local hl_offset, hl_len
+      if opts.hl_part then
+        local hl_str = opts.case_sensitive and opts.hl_part or opts.hl_part:lower()
+        local match_str = raw_pattern
+        local pos = match_str:find(hl_str, 1, true)
+        if pos then hl_offset, hl_len = pos, #hl_str
+        else
+          vim.notify(
+            ("[todotag.nvim] hl_part `%q` not found in pattern `%q`, highlighting full match"):format(opts.hl_part, opts.pattern),
+            vim.log.levels.WARN,
+            { title = "todotag.nvim" }
+          )
+        end
+      end
 
       _patterns[#_patterns+1] = {
-        pattern = "%f[%w_-]" .. keyword_pattern .. "%f[^%w_-]",
+        pattern = search_pattern,
         hl_group = opts.hl_group,
         case_sensitive = opts.case_sensitive,
+        hl_offset = hl_offset,
+        hl_len = hl_len,
       }
     end
   end
@@ -95,13 +133,14 @@ end
 ---@return boolean
 local function has_todo_bg_extmark(bufnr, line, scol, ecol)
   if not todo_comments_ns then todo_comments_ns = vim.api.nvim_get_namespaces()["todo-comments"] end
+  if not todo_comments_ns then return false end
 
-  local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, todo_comments_ns or -1, { line, 0 }, { line, -1 }, { details = true })
+  local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, todo_comments_ns, { line, 0 }, { line, -1 }, { details = true })
   for _, extmark in ipairs(extmarks) do
     local _, _, mark_col, details = unpack(extmark)
     ---@cast details vim.api.keyset.extmark_details
     if not details.end_col then
-      vim.notify("ERROR: Missing end_col in extmark details", vim.log.levels.ERROR)
+      vim.notify("[todotag.nvim] Missing end_col in extmark details", vim.log.levels.ERROR, { title = "todotag.nvim" })
     else
       -- Check if extmark overlaps with the region
       if not (ecol <= mark_col or scol >= details.end_col) then
@@ -156,8 +195,14 @@ function M.highlight(bufnr, srow, erow)
       while true do
         local s, e = line_to_search:find(pat.pattern, col)
         if s == nil or e == nil then break end
-        if is_comment(bufnr, linenr - 1, s - 1) then
-          add_highlight(bufnr, M.ns, pat.hl_group, linenr - 1, s - 1, e)
+        local hl_s, hl_e = s, e
+        -- Compute highlight range (partial or full match)
+        if pat.hl_offset and pat.hl_len then
+          hl_s = s + pat.hl_offset - 1
+          hl_e = hl_s + pat.hl_len - 1
+        end
+        if is_comment(bufnr, linenr - 1, hl_s - 1) then
+          add_highlight(bufnr, M.ns, pat.hl_group, linenr - 1, hl_s - 1, hl_e)
         end
         col = e + 1
       end

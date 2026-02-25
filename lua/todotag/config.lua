@@ -4,7 +4,10 @@ local M = {}
 ---@type Todotag.Config
 local DEFAULTS = {
   -- Keywords recognized as todo tags
-  keywords = { todo = { hl_group = "Todo", case_sensitive = false } },
+  keywords = {
+    { pattern = "todo:", hl_part = "todo", hl_group = "Todo", case_sensitive = false },
+    { pattern = "[todo]", hl_part = "todo", hl_group = "Todo", case_sensitive = false },
+  },
   priority = 501,  -- Cover todo-comments.nvim priority, which is 500 by default.
 
   throttle = 250,

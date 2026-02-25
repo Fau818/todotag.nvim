@@ -1,18 +1,14 @@
 # ✅ todotag.nvim
-
 A lightweight and customizable Neovim plugin that highlights todo tags in comments.
 
 ## ✨ Features
-
 - **Customizable Todo Tags**: Define your own todo keywords and highlight groups
-- **Smart Highlighting**: Only highlights tags in comment regions
+- **Smart Highlighting**: Only highlights tags in comment regions (treesitter + syntax fallback)
+- **Partial Highlighting**: Match a broader pattern but only highlight a portion (e.g., match `todo:` but highlight `todo`)
 - **Case Sensitivity**: Control whether tags are case-sensitive
 - **Performance**: Efficiently highlights only visible regions with throttling
-- **Exclusion Rules**: Exclude specific filetypes and buftypes
-- **Priority Control**: Set highlight priority to override other plugins
 
 ## 🎨 Demo
-
 ### Basic Showcase
 ![Basic Showcase](assets/showcase.png)
 
@@ -20,45 +16,33 @@ A lightweight and customizable Neovim plugin that highlights todo tags in commen
 ![With todo-comments.nvim](assets/showcase_with_todocomments.png)
 
 ## 📦 Installation
-
-### Using lazy.nvim
-
 ```lua
+-- lazy.nvim
 {
   "fau818/todotag.nvim",
-  dependencies = "folke/todo-comments.nvim",  -- Optional: enhances TODO management
+  dependencies = "folke/todo-comments.nvim",  -- Optional
   opts = {},
 }
 ```
 
-For a more complete lazy.nvim configuration with custom highlights, see the [Comprehensive Configuration](#comprehensive-configuration) section.
-
 ## 🚀 Usage
-
-### Start/Stop Highlighting
-
-The plugin starts automatically when Neovim launches, but you can control it with these commands:
+The plugin starts automatically after `setup()`. You can also control it manually:
 
 ```vim
 :TodotagStart  " Start highlighting todo tags
 :TodotagStop   " Stop highlighting todo tags
 ```
 
-### Default Behavior
-
-By default, the plugin highlights the keyword `TODO` in comments with the `Todo` highlight group.
-
 ## ⚙️ Configuration
-
-You can customize the plugin's behavior by passing a configuration table to `setup()`:
-
+Full configuration example with all options:
 ```lua
 require("todotag").setup({
   -- Keywords recognized as todo tags
   keywords = {
-    todo = { hl_group = "Todo", case_sensitive = false },
-    fix  = { hl_group = "Error", case_sensitive = true },
-    note = { hl_group = "DiagnosticInfo", case_sensitive = false },
+    { pattern = "todo:", hl_part = "todo", hl_group = "Todo", case_sensitive = false },
+    { pattern = "[todo]", hl_part = "todo", hl_group = "Todo", case_sensitive = false },
+    { pattern = "fix",   hl_group = "Error", case_sensitive = true },
+    { pattern = "note:", hl_part = "note", hl_group = "DiagnosticInfo", case_sensitive = false },
   },
 
   -- Highlight priority (default: 501, covers todo-comments.nvim)
@@ -78,90 +62,25 @@ require("todotag").setup({
 })
 ```
 
-### Custom Highlight Groups
+### Keyword Options
+| Field | Type | Description |
+|---|---|---|
+| `pattern` | `string` | **Required.** The string to match in comments. |
+| `hl_group` | `string` | **Required.** Highlight group to apply. |
+| `hl_part` | `string?` | Substring of `pattern` to highlight. If omitted, the entire match is highlighted. |
+| `case_sensitive` | `boolean?` | Default `false`. When `false`, matches regardless of case. |
 
-You can define your own highlight groups using Neovim's Lua API or Vimscript:
-
-#### Using Lua API
+## 📖 Example Configuration
 ```lua
--- Define highlight groups with Lua API
-vim.api.nvim_set_hl(0, "MyTodoTag", { fg = "#ffffff", bg = "#ff0000", bold = true })
-vim.api.nvim_set_hl(0, "MyNoteTag", { fg = "#1a1a2e", bg = "#a6c1ee", italic = true })
-```
-
-#### Using Vimscript
-```vim
-" Define highlight groups with Vimscript
-hi MyTodoTag guifg=#ffffff guibg=#ff0000
-hi MyNoteTag guifg=#1a1a2e guibg=#a6c1ee
-```
-
-Then use your custom groups in the plugin configuration:
-```lua
-require("todotag").setup({
-  keywords = {
-    todo = { hl_group = "MyTodoTag", case_sensitive = false },
-    note = { hl_group = "MyNoteTag", case_sensitive = false },
-  },
-})
-```
-
-## 🔍 Key Features Explained
-
-### Case Sensitivity
-
-When `case_sensitive` is `false`, the plugin will match tags regardless of case:
-- `TODO`, `Todo`, `todo`, and `tOdO` will all be matched
-
-When `case_sensitive` is `true`, only the exact case will be matched.
-
-### Smart Comment Detection
-
-The plugin detects if a tag is inside a comment using two methods:
-1. Treesitter (if available) for accurate comment detection
-2. Syntax highlighting fallback for legacy support
-
-### Performance Optimizations
-
-- **Throttling**: Updates are throttled to prevent performance issues
-- **Visible Area Only**: Only highlights lines in the visible window
-- **Buffer Attach**: Attaches only to valid buffers (excludes floats, help, etc.)
-- **State Management**: Tracks valid lines to avoid unnecessary re-highlighting
-
-## 📖 Examples
-
-### Basic Custom Configuration
-
-```lua
--- Highlight bug tags with error group (case-insensitive)
-require("todotag").setup({
-  keywords = {
-    bug = { hl_group = "Error", case_sensitive = false },
-  },
-})
-```
-
-### Comprehensive Configuration
-
-Here's a focused example using lazy.nvim:
-
-```lua
--- In your lazy.nvim plugin configuration
 return {
   "fau818/todotag.nvim",
-  dependencies = "folke/todo-comments.nvim",  -- Optional dependency
 
   opts = {
     keywords = {
-      -- Primary TODO tag (green)
-      todo = { hl_group = "TodoTag", case_sensitive = false },
-      -- Information tag (blue)
-      note = { hl_group = "InfoTag", case_sensitive = false },
-      -- Fix tag (red)
-      fix  = { hl_group = "FixTag", case_sensitive = false },
+      { pattern = "todo:", hl_part = "todo", hl_group = "TodoTag", case_sensitive = false },
+      { pattern = "note:", hl_part = "note", hl_group = "InfoTag", case_sensitive = false },
+      { pattern = "fix", hl_group = "FixTag", case_sensitive = false },
     },
-    only_visible = true,  -- Highlight only visible lines (performance)
-    throttle = 250,       -- Throttle updates
   },
 
   config = function(_, opts)
@@ -176,33 +95,23 @@ return {
 ```
 
 ## ❗️ Troubleshooting
-
 ### Tags Are Not Highlighted
-
 1. Ensure the tag is inside a comment
 2. Check that the filetype is not excluded
-3. Verify the tag is not in a listed exclude buftype
+3. Verify the buftype is not excluded
 4. Make sure the plugin is started with `:TodotagStart`
 
 ### Performance Issues
-
-- Increase the `throttle` value to reduce the frequency of updates
-- Set `only_visible` to `true` to only highlight visible lines
-- Reduce the number of keywords if you have many custom tags
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit issues and pull requests.
+- Increase `throttle` to reduce update frequency
+- Set `only_visible = true` to only highlight visible lines
+- Reduce the number of keywords
 
 ## 📄 License
-
-MIT License - see LICENSE file for details
+MIT License - see [LICENSE](LICENSE) file for details
 
 ## 💬 Support
-
 If you have any questions or issues, please open an issue on the GitHub repository: [issues](https://github.com/fau818/todotag.nvim/issues)
 
 ## 🙏 Acknowledgments
-
 - Inspired by various todo highlighting plugins
 - Uses ideas from [folke/todo-comments.nvim](https://github.com/folke/todo-comments.nvim)

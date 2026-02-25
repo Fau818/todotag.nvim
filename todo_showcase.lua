@@ -1,17 +1,19 @@
 -- TODO: there is an example Test TEST test-23 [TEST_]  TEST_123
--- NOTE: Bug FIXME fixit ISsuE
+-- NOTE: Bug FIXME [fixit] ISsuE
 
 -- TODO: This is a normal todo tag
 -- This line has TODO in the middle
 
 -- This is a test file for todo patterns
 
--- TEST 1: Normal TODO should be highlighted
--- TODO: This should NOT be highlighted (with colon)
--- TODO 2: 123 Hint
+-- TEST 1: Normal TODO should be highlighted   NOTE: haha
+-- TODO: This should NOT be highlighted (with colon)  [FIXME]
+-- [tOdO]ISSUE: BOTH should be lighlighted!
+-- TODO:[ISSUE]   BOTH should be lighlighted!
+-- TODO 2: 123 [Hint]
 -- PS: 123
 -- ps: 123
--- Ps: 123
+-- Ps: 123     PS:dsad
 
 -- Test with different cases
 -- Todo: This should be highlighted
