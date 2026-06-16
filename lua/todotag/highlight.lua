@@ -211,6 +211,34 @@ function M.highlight(bufnr, srow, erow)
 end
 
 
+-- ==================== todo-comments hook ====================
+local tc_hooked = false
+
+---Hook todo-comments.nvim's highlight function so that whenever it redraws a
+---range, we re-check our own highlights there. Both plugins render
+---asynchronously (throttled), so checking for `TodoBg*` extmarks only at our
+---own draw time races with todo-comments: if we draw first, its marks appear
+---afterwards and the highlights stack.
+local function hook_todo_comments()
+  if tc_hooked then return end
+  -- Don't force-load todo-comments; only hook once the user's setup loaded it.
+  local tc = package.loaded["todo-comments.highlight"]
+  if not tc or type(tc.highlight) ~= "function" then return end
+  tc_hooked = true
+
+  local tc_highlight = tc.highlight
+  ---@param buf number
+  ---@param first number 0-indexed first row (inclusive)
+  ---@param last number 0-indexed last row (inclusive)
+  tc.highlight = function(buf, first, last, ...)
+    tc_highlight(buf, first, last, ...)
+    if M.enabled and M.bufs[buf] then
+      M.invalidate(buf, first + 1, last + 1)  -- todo-comments rows are 0-indexed
+    end
+  end
+end
+
+
 -- ==================== Update ====================
 local timer = vim.uv.new_timer()  -- Throttle timer
 
@@ -252,6 +280,7 @@ end
 
 
 function M.update()
+  hook_todo_comments()  -- Retry here in case todo-comments was lazy-loaded after us
   -- Throttle updates to improve performance
   assert(timer, "Timer not initialized!")
   if not timer:is_active() then
@@ -315,10 +344,11 @@ end
 function M.stop()
   M.enabled = false
 
+  for buf, _ in pairs(M.bufs) do if vim.api.nvim_buf_is_valid(buf) then pcall(vim.api.nvim_buf_clear_namespace, buf, M.ns, 0, -1) end end
+
   M.wins = {}
   M.bufs = {}
-
-  for buf, _ in pairs(M.bufs) do if vim.api.nvim_buf_is_valid(buf) then pcall(vim.api.nvim_buf_clear_namespace, buf, M.ns, 0, -1) end end
+  M.state = {}
 
   -- Clear the plugin's autocmd group
   vim.api.nvim_clear_autocmds({ group = M.autocmd_group })
@@ -330,6 +360,8 @@ function M.start()
 
   M.enabled = true
   M.autocmd_group = vim.api.nvim_create_augroup("todotag.nvim", { clear = true })
+
+  hook_todo_comments()
 
   vim.api.nvim_create_autocmd("BufWinEnter", {
     group = M.autocmd_group,
